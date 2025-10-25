@@ -1,7 +1,7 @@
 /* 基本スタイル */
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background-color: #f0f4f8; /* 優しい色合い */
+    background-color: #f0f4f8; 
     color: #333;
     display: flex;
     justify-content: center;
@@ -21,20 +21,40 @@ body {
 }
 
 h1 {
-    color: #4a69bd; /* メインカラー */
+    color: #4a69bd; 
     margin-bottom: 20px;
 }
 
 /* フォームとボタン */
-input[type="password"], input[type="number"] {
+input[type="password"] {
     width: calc(100% - 22px);
-    padding: 15px 10px; /* パディングを増やし、入力欄を大きくする */
-    margin-bottom: 20px; /* 間隔を広げる */
-    border: 2px solid #ccc; /* 枠線を少し強調 */
-    border-radius: 8px; /* 角を丸くする */
+    padding: 15px 10px;
+    margin-bottom: 20px;
+    border: 2px solid #ccc;
+    border-radius: 8px;
     box-sizing: border-box;
-    font-size: 1.1em; /* 文字サイズを大きくする */
+    font-size: 1.1em;
 }
+
+/* --- 範囲選択の数字入力欄を横長の丸デザインに --- */
+input[type="number"] {
+    width: 100%;
+    padding: 15px 10px; 
+    margin-bottom: 0; /* range-inputsで管理 */
+    border: 2px solid #4a69bd; /* メインカラーの枠線 */
+    border-radius: 50px; /* 横長の丸 */
+    box-sizing: border-box;
+    font-size: 1.1em;
+    text-align: center; /* 数字を中央に */
+    transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+input[type="number"]:focus {
+    border-color: #3b53a0;
+    box-shadow: 0 0 5px rgba(74, 105, 189, 0.5);
+    outline: none;
+}
+/* ------------------------------------------- */
 
 button {
     background-color: #4a69bd;
@@ -71,10 +91,11 @@ button:disabled {
 }
 
 #range-form label {
-    align-self: flex-start; /* ラベルを左寄せにする */
+    align-self: flex-start; 
     margin-top: 10px;
     font-weight: bold;
     color: #4a69bd;
+    margin-bottom: 5px; /* 入力欄との間隔 */
 }
 
 .range-inputs {
@@ -86,11 +107,6 @@ button:disabled {
 
 .range-inputs > div {
     flex: 1;
-}
-
-.range-inputs input[type="number"] {
-    width: 100%;
-    margin-bottom: 0; 
 }
 
 #range-form button {
