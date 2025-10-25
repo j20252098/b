@@ -55,21 +55,26 @@ button:disabled {
     cursor: not-allowed;
 }
 
-/* クイズ選択肢 */
+/* --- 修正: 選択肢ボタンのデザイン --- */
 .options-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 15px;
-    margin-top: 20px;
+    /* 選択肢を縦並びにする */
+    display: flex;
+    flex-direction: column; 
+    gap: 12px; 
+    margin-top: 25px;
 }
 
 .option-button {
-    padding: 15px;
+    width: 100%; /* 横幅いっぱい */
+    padding: 18px 20px; /* 縦長にする */
     font-size: 1.1em;
     border: 2px solid #4a69bd;
     background-color: #fff;
     color: #4a69bd;
-    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+    border-radius: 50px; /* 角を丸くする */
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.1s, border-color 0.3s ease;
+    text-align: left; /* テキストを左寄せにする */
 }
 
 .option-button:hover:not(:disabled) {
@@ -82,7 +87,8 @@ button:disabled {
     margin-top: 20px;
     padding: 10px;
     border-radius: 5px;
-    min-height: 40px; /* 領域確保 */
+    min-height: 40px;
+    font-weight: bold;
 }
 
 .correct-text {
@@ -127,5 +133,59 @@ button:disabled {
 /* 正解をハイライト */
 .highlight-correct {
     border: 3px solid #38761d !important;
-    background-color: #e6ffec !important; /* 非常に薄い緑 */
+    background-color: #e6ffec !important;
+}
+
+/* --- レスポンシブデザインのためのメディアクエリ --- */
+
+/* スマホ縦向き (〜600px) の調整 */
+@media (max-width: 600px) {
+    .login-container, #quiz-container {
+        padding: 20px;
+        box-shadow: none; 
+        border-radius: 0;
+        max-width: 100%;
+        min-height: 100vh;
+    }
+    
+    body {
+        align-items: flex-start;
+        background-color: #ffffff;
+    }
+
+    h1 {
+        font-size: 1.8em;
+    }
+
+    /* 問題文とカウンターのサイズ調整 */
+    #question {
+        font-size: 1.5em;
+        margin-top: 15px;
+    }
+    
+    #question-counter {
+        font-size: 1em;
+        margin-bottom: 5px;
+    }
+
+    /* 選択肢ボタンのフォントサイズ調整 */
+    .option-button {
+        padding: 14px 15px;
+        font-size: 1em;
+        /* テキストを中央寄せに戻す（スマホでの見やすさ優先） */
+        text-align: center;
+    }
+}
+
+/* iPad横向きなど (〜1024px) の調整 */
+@media (min-width: 601px) and (max-width: 1024px) {
+    .login-container, #quiz-container {
+        padding: 40px;
+    }
+    
+    /* 選択肢ボタンの横幅を少し狭める */
+    .options-grid {
+        max-width: 80%;
+        margin: 25px auto 0;
+    }
 }
