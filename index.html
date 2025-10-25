@@ -2,19 +2,15 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>ログイン</title>
-    <link rel="stylesheet" href="style.css">
+    <title>クイズ開始</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="refresh" content="0; url=quiz.html">
 </head>
 <body>
-    <div class="login-container">
-        <h1>英単語クイズ ログイン</h1>
-        <form id="login-form">
-            <input type="password" id="password-input" placeholder="パスワードを入力" required>
-            <button type="submit">開く</button>
-            <p id="login-error" style="color: red; display: none;">パスワードが違います。</p>
-        </form>
-    </div>
-    <script src="quiz.js"></script>
+    <p>クイズページへ移動しています...</p>
+    <script>
+        // JSが有効な環境でもリダイレクトを保証
+        window.location.replace('quiz.html');
+    </script>
 </body>
 </html>
