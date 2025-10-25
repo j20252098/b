@@ -1,4 +1,5 @@
 const CORRECT_PASSWORD = '1152025';
+const AUTH_KEY = 'quiz_authenticated'; // 認証状態を保存するキー
 let allWords = [];
 let questions = [];
 let currentQuestionIndex = 0;
@@ -17,7 +18,6 @@ function shuffleArray(array) {
 
 // 誤答の選択肢を生成する
 function generateOptions(allWords, correctMeaning, count) {
-    // 正解以外の意味 (meaning) をすべて集める
     const meanings = allWords.map(w => w.meaning).filter(m => m !== correctMeaning);
     const shuffledMeanings = shuffleArray(meanings);
     return shuffledMeanings.slice(0, count);
@@ -27,13 +27,18 @@ function generateOptions(allWords, correctMeaning, count) {
 // === 認証処理 (index.html用) ===
 
 if (document.getElementById('login-form')) {
+    // ログインページにいる場合、セッションをリセット
+    sessionStorage.removeItem(AUTH_KEY);
+    
     document.getElementById('login-form').addEventListener('submit', (e) => {
         e.preventDefault();
         const inputPassword = document.getElementById('password-input').value;
         const errorMsg = document.getElementById('login-error');
 
         if (inputPassword === CORRECT_PASSWORD) {
-            // 認証成功: クイズページへ遷移
+            // 認証成功: セッションに認証済みフラグをセット
+            sessionStorage.setItem(AUTH_KEY, 'true');
+            // クイズページへ遷移
             window.location.href = 'quiz.html';
         } else {
             // 認証失敗
@@ -47,13 +52,19 @@ if (document.getElementById('login-form')) {
 // === クイズ本体ロジック (quiz.html用) ===
 
 if (document.getElementById('quiz-container')) {
+    // ページロード時: 認証チェック
+    if (sessionStorage.getItem(AUTH_KEY) !== 'true') {
+        alert('アクセスするにはパスワードが必要です。');
+        // ログインページへ強制リダイレクト
+        window.location.href = 'index.html'; 
+    }
+    
     const rangeForm = document.getElementById('range-form');
     const questionArea = document.getElementById('question-area');
     const resultArea = document.getElementById('result-area');
     const totalWordsSpan = document.getElementById('total-words');
 
     // 1. JSONデータの読み込み
-    // ルート直下配置のためパスは 'English.json' のまま
     fetch('English.json')
         .then(response => {
             if (!response.ok) {
@@ -64,7 +75,6 @@ if (document.getElementById('quiz-container')) {
         .then(data => {
             allWords = data;
             totalWordsSpan.textContent = data.length;
-            // データの読み込み完了後、終了番号を自動設定
             document.getElementById('end').value = data.length;
         })
         .catch(error => {
@@ -90,18 +100,16 @@ if (document.getElementById('quiz-container')) {
             return;
         }
 
-        // 3. 問題の生成 (ブラウザ側で実行)
-        // start-1 から end までの配列の要素をスライス
+        // 3. 問題の生成
         const selectedWords = allWords.slice(start - 1, end);
         
         questions = selectedWords.map(word => {
-            const correctAnswer = word.meaning; // 正答は "meaning"
-            // 誤答を生成するために全単語の意味を使用
+            const correctAnswer = word.meaning;
             const options = generateOptions(allWords, correctAnswer, 3);
             
             return {
                 question: word.word, // 問題文は "word" (英単語)
-                options: shuffleArray([...options, correctAnswer]), // 選択肢
+                options: shuffleArray([...options, correctAnswer]),
                 correctAnswer: correctAnswer
             };
         });
@@ -128,7 +136,7 @@ if (document.getElementById('quiz-container')) {
 
         const q = questions[currentQuestionIndex];
         document.getElementById('question-counter').textContent = `問題 ${currentQuestionIndex + 1} / ${questions.length}`;
-        document.getElementById('question').textContent = q.question; // ★英単語を表示
+        document.getElementById('question').textContent = q.question;
         const optionsDiv = document.getElementById('options');
         optionsDiv.innerHTML = '';
         document.getElementById('feedback-message').innerHTML = '';
@@ -145,7 +153,7 @@ if (document.getElementById('quiz-container')) {
         questionArea.classList.add('fade-in');
     }
 
-    // 5. 回答の判定 (変更なし)
+    // 5. 回答の判定
     function checkAnswer(selectedAnswer, correctAnswer, clickedButton) {
         const feedback = document.getElementById('feedback-message');
         
@@ -178,7 +186,7 @@ if (document.getElementById('quiz-container')) {
         }, 2000);
     }
 
-    // 6. 結果の表示 (変更なし)
+    // 6. 結果の表示
     function showResults() {
         questionArea.style.display = 'none';
         resultArea.style.display = 'block';
