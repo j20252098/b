@@ -1,119 +1,175 @@
+const CORRECT_PASSWORD = '1152025'; // パスワードをクライアント側で保持します
+let allWords = []; // 全単語データを保持
 let questions = [];
 let currentQuestionIndex = 0;
 let score = 0;
 
-const rangeForm = document.getElementById('range-form');
-const questionArea = document.getElementById('question-area');
-const resultArea = document.getElementById('result-area');
-const totalWordsSpan = document.getElementById('total-words');
+// === ユーティリティ関数 ===
 
-// 初期設定: 総単語数を取得
-fetch('/api/quiz-data')
-    .then(res => res.json())
-    .then(data => {
-        totalWordsSpan.textContent = data.length;
-        document.getElementById('end').value = data.length;
-    })
-    .catch(error => {
-        totalWordsSpan.textContent = 'エラー';
-        console.error('Failed to fetch total word count:', error);
+// 配列をシャッフルする
+function shuffleArray(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+    }
+    return array;
+}
+
+// 誤答の選択肢を生成する
+function generateOptions(allWords, correctMeaning, count) {
+    // 正解以外の意味をすべて集める
+    const meanings = allWords.map(w => w.meaning).filter(m => m !== correctMeaning);
+    const shuffledMeanings = shuffleArray(meanings);
+    return shuffledMeanings.slice(0, count);
+}
+
+
+// === 認証処理 (index.html用) ===
+
+if (document.getElementById('login-form')) {
+    document.getElementById('login-form').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const inputPassword = document.getElementById('password-input').value;
+        const errorMsg = document.getElementById('login-error');
+
+        if (inputPassword === CORRECT_PASSWORD) {
+            // 認証成功: クイズページへ遷移
+            window.location.href = 'quiz.html';
+        } else {
+            // 認証失敗
+            errorMsg.style.display = 'block';
+            setTimeout(() => { errorMsg.style.display = 'none'; }, 2000);
+        }
     });
+}
 
-// 範囲選択フォームの送信処理
-rangeForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const start = document.getElementById('start').value;
-    const end = document.getElementById('end').value;
 
-    // サーバーから指定範囲の問題を取得
-    const response = await fetch(`/api/quiz-data?start=${start}&end=${end}`);
-    questions = await response.json();
-    currentQuestionIndex = 0;
-    score = 0;
-    
-    if (questions.length > 0) {
+// === クイズ本体ロジック (quiz.html用) ===
+
+if (document.getElementById('quiz-container')) {
+    const rangeForm = document.getElementById('range-form');
+    const questionArea = document.getElementById('question-area');
+    const resultArea = document.getElementById('result-area');
+    const totalWordsSpan = document.getElementById('total-words');
+
+    // 1. JSONデータの読み込み
+    fetch('English.json')
+        .then(response => response.json())
+        .then(data => {
+            allWords = data;
+            totalWordsSpan.textContent = data.length;
+            document.getElementById('end').value = data.length;
+        })
+        .catch(error => {
+            totalWordsSpan.textContent = 'エラー';
+            console.error('Failed to load quiz data:', error);
+            alert('クイズデータを読み込めませんでした。');
+        });
+
+    // 2. 範囲選択フォームの送信処理
+    rangeForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        
+        const start = parseInt(document.getElementById('start').value);
+        const end = parseInt(document.getElementById('end').value);
+        
+        if (start < 1 || end > allWords.length || start > end) {
+            alert(`範囲設定が不正です。(1から${allWords.length}まで)`);
+            return;
+        }
+
+        // 3. 問題の生成 (ブラウザ側で実行)
+        const selectedWords = allWords.slice(start - 1, end);
+        questions = selectedWords.map(word => {
+            const correctAnswer = word.meaning;
+            const options = generateOptions(allWords, correctAnswer, 3);
+            
+            return {
+                question: word.english,
+                options: shuffleArray([...options, correctAnswer]),
+                correctAnswer: correctAnswer
+            };
+        });
+
+        currentQuestionIndex = 0;
+        score = 0;
+
+        // 画面切り替えアニメーション
         rangeForm.classList.replace('fade-in', 'fade-out');
-        // アニメーション完了後に要素を切り替え
         setTimeout(() => {
             rangeForm.style.display = 'none';
             questionArea.style.display = 'block';
             questionArea.classList.add('fade-in');
             loadQuestion();
         }, 500); 
-    } else {
-        alert('指定された範囲に問題がありません。');
-    }
-});
-
-function loadQuestion() {
-    if (currentQuestionIndex >= questions.length) {
-        // クイズ終了
-        showResults();
-        return;
-    }
-
-    const q = questions[currentQuestionIndex];
-    document.getElementById('question-counter').textContent = `問題 ${currentQuestionIndex + 1} / ${questions.length}`;
-    document.getElementById('question').textContent = q.question;
-    const optionsDiv = document.getElementById('options');
-    optionsDiv.innerHTML = '';
-    
-    // フィードバックをリセット
-    document.getElementById('feedback-message').textContent = '';
-    
-    q.options.forEach(option => {
-        const button = document.createElement('button');
-        button.textContent = option;
-        button.classList.add('option-button');
-        button.addEventListener('click', () => checkAnswer(option, q.correctAnswer, button));
-        optionsDiv.appendChild(button);
     });
-    
-    // 新しい問題のフェードインアニメーションをトリガー
-    questionArea.classList.remove('fade-out');
-    questionArea.classList.add('fade-in');
-}
 
-function checkAnswer(selectedAnswer, correctAnswer, clickedButton) {
-    const feedback = document.getElementById('feedback-message');
-    
-    // 全てのボタンを無効化
-    document.querySelectorAll('#options button').forEach(btn => btn.disabled = true);
-    
-    // 正誤判定とアニメーション
-    if (selectedAnswer === correctAnswer) {
-        score++;
-        feedback.innerHTML = '✅ **正解です！**';
-        clickedButton.classList.add('correct-answer-animation');
+    // 4. 問題の表示
+    function loadQuestion() {
+        if (currentQuestionIndex >= questions.length) {
+            showResults();
+            return;
+        }
+
+        const q = questions[currentQuestionIndex];
+        document.getElementById('question-counter').textContent = `問題 ${currentQuestionIndex + 1} / ${questions.length}`;
+        document.getElementById('question').textContent = q.question;
+        const optionsDiv = document.getElementById('options');
+        optionsDiv.innerHTML = '';
+        document.getElementById('feedback-message').innerHTML = '';
         
-    } else {
-        feedback.innerHTML = `❌ **不正解。** 正解は「<span class="correct-text">${correctAnswer}</span>」でした。`;
-        clickedButton.classList.add('wrong-answer-animation');
-        
-        // 正解のボタンをハイライト
-        document.querySelectorAll('#options button').forEach(btn => {
-            if (btn.textContent === correctAnswer) {
-                btn.classList.add('highlight-correct');
-            }
+        q.options.forEach(option => {
+            const button = document.createElement('button');
+            button.textContent = option;
+            button.classList.add('option-button');
+            button.addEventListener('click', () => checkAnswer(option, q.correctAnswer, button));
+            optionsDiv.appendChild(button);
         });
+        
+        questionArea.classList.remove('fade-out');
+        questionArea.classList.add('fade-in');
     }
 
-    // 2秒後に次の問題へ移行
-    setTimeout(() => {
-        questionArea.classList.replace('fade-in', 'fade-out');
+    // 5. 回答の判定
+    function checkAnswer(selectedAnswer, correctAnswer, clickedButton) {
+        const feedback = document.getElementById('feedback-message');
         
-        setTimeout(() => {
-            currentQuestionIndex++;
-            loadQuestion();
-        }, 500); // fade-outの完了を待つ
-    }, 2000);
-}
+        document.querySelectorAll('#options button').forEach(btn => btn.disabled = true);
 
-function showResults() {
-    questionArea.style.display = 'none';
-    resultArea.style.display = 'block';
-    resultArea.classList.add('fade-in');
-    
-    document.getElementById('score').textContent = score;
-    document.getElementById('total-questions').textContent = questions.length;
+        if (selectedAnswer === correctAnswer) {
+            score++;
+            feedback.innerHTML = '✅ **正解です！**';
+            clickedButton.classList.add('correct-answer-animation');
+            
+        } else {
+            feedback.innerHTML = `❌ **不正解。** 正解は「<span class="correct-text">${correctAnswer}</span>」でした。`;
+            clickedButton.classList.add('wrong-answer-animation');
+            
+            document.querySelectorAll('#options button').forEach(btn => {
+                if (btn.textContent === correctAnswer) {
+                    btn.classList.add('highlight-correct');
+                }
+            });
+        }
+
+        // 次の問題へ移行
+        setTimeout(() => {
+            questionArea.classList.replace('fade-in', 'fade-out');
+            
+            setTimeout(() => {
+                currentQuestionIndex++;
+                loadQuestion();
+            }, 500);
+        }, 2000);
+    }
+
+    // 6. 結果の表示
+    function showResults() {
+        questionArea.style.display = 'none';
+        resultArea.style.display = 'block';
+        resultArea.classList.add('fade-in');
+        
+        document.getElementById('score').textContent = score;
+        document.getElementById('total-questions').textContent = questions.length;
+    }
 }
