@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>四択英単語クイズ</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="quiz-container">
+        <h1>四択英単語クイズ</h1>
+
+        <form id="range-form" class="fade-in">
+            <h2>問題範囲を選択</h2>
+            <p>全単語数: <span id="total-words">読み込み中...</span></p>
+            <label for="start">開始番号 (1から):</label>
+            <input type="number" id="start" value="1" min="1" required>
+            <label for="end">終了番号:</label>
+            <input type="number" id="end" value="10" min="1" required>
+            <button type="submit">問題開始</button>
+        </form>
+        
+        <div id="question-area" style="display:none;">
+            <h3 id="question-counter"></h3>
+            <h2 id="question"></h2>
+            <div id="options" class="options-grid">
+                </div>
+            <div id="feedback-message" class="feedback"></div>
+        </div>
+
+        <div id="result-area" style="display:none;">
+            <h2>クイズ終了！</h2>
+            <p>あなたの正答数: <span id="score"></span> / <span id="total-questions"></span></p>
+            <button onclick="window.location.reload()">もう一度プレイ</button>
+        </div>
+
+    </div>
+    <script src="quiz.js"></script>
+</body>
+</html>
