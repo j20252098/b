@@ -1,0 +1,131 @@
+/* 基本スタイル */
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f0f4f8; /* 優しい色合い */
+    color: #333;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    margin: 0;
+}
+
+.login-container, #quiz-container {
+    background-color: #ffffff;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    width: 90%;
+    max-width: 600px;
+    text-align: center;
+}
+
+h1 {
+    color: #4a69bd; /* メインカラー */
+    margin-bottom: 20px;
+}
+
+/* フォームとボタン */
+input[type="password"], input[type="number"] {
+    width: calc(100% - 22px);
+    padding: 10px;
+    margin-bottom: 15px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    box-sizing: border-box;
+}
+
+button {
+    background-color: #4a69bd;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.1s;
+}
+
+button:hover:not(:disabled) {
+    background-color: #3b53a0;
+    transform: translateY(-1px);
+}
+
+button:disabled {
+    background-color: #cccccc;
+    cursor: not-allowed;
+}
+
+/* クイズ選択肢 */
+.options-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.option-button {
+    padding: 15px;
+    font-size: 1.1em;
+    border: 2px solid #4a69bd;
+    background-color: #fff;
+    color: #4a69bd;
+    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+.option-button:hover:not(:disabled) {
+    background-color: #e0e7f7;
+    border-color: #3b53a0;
+}
+
+/* フィードバックメッセージ */
+.feedback {
+    margin-top: 20px;
+    padding: 10px;
+    border-radius: 5px;
+    min-height: 40px; /* 領域確保 */
+}
+
+.correct-text {
+    font-weight: bold;
+    color: #38761d;
+}
+
+/* --- アニメーション --- */
+
+/* フェードイン・アウト */
+.fade-in {
+    opacity: 1;
+    transition: opacity 0.5s ease-in;
+}
+
+.fade-out {
+    opacity: 0;
+    transition: opacity 0.5s ease-out;
+}
+
+/* 正解アニメーション */
+.correct-answer-animation {
+    background-color: #d9ead3 !important; /* 薄い緑 */
+    border-color: #38761d !important;
+    color: #38761d !important;
+    animation: correct-pulse 0.5s 2;
+}
+
+@keyframes correct-pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.03); }
+    100% { transform: scale(1); }
+}
+
+/* 不正解アニメーション */
+.wrong-answer-animation {
+    background-color: #f4cccc !important; /* 薄い赤 */
+    border-color: #cc0000 !important;
+    color: #cc0000 !important;
+}
+
+/* 正解をハイライト */
+.highlight-correct {
+    border: 3px solid #38761d !important;
+    background-color: #e6ffec !important; /* 非常に薄い緑 */
+}
