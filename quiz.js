@@ -1,5 +1,5 @@
-const CORRECT_PASSWORD = '1152025'; // パスワードをクライアント側で保持します
-let allWords = []; // 全単語データを保持
+const CORRECT_PASSWORD = '1152025';
+let allWords = [];
 let questions = [];
 let currentQuestionIndex = 0;
 let score = 0;
@@ -17,7 +17,7 @@ function shuffleArray(array) {
 
 // 誤答の選択肢を生成する
 function generateOptions(allWords, correctMeaning, count) {
-    // 正解以外の意味をすべて集める
+    // 正解以外の意味 (meaning) をすべて集める
     const meanings = allWords.map(w => w.meaning).filter(m => m !== correctMeaning);
     const shuffledMeanings = shuffleArray(meanings);
     return shuffledMeanings.slice(0, count);
@@ -53,17 +53,24 @@ if (document.getElementById('quiz-container')) {
     const totalWordsSpan = document.getElementById('total-words');
 
     // 1. JSONデータの読み込み
+    // ルート直下配置のためパスは 'English.json' のまま
     fetch('English.json')
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('English.jsonの読み込みに失敗しました');
+            }
+            return response.json();
+        })
         .then(data => {
             allWords = data;
             totalWordsSpan.textContent = data.length;
+            // データの読み込み完了後、終了番号を自動設定
             document.getElementById('end').value = data.length;
         })
         .catch(error => {
             totalWordsSpan.textContent = 'エラー';
             console.error('Failed to load quiz data:', error);
-            alert('クイズデータを読み込めませんでした。');
+            alert('クイズデータを読み込めませんでした。ファイルパスを確認してください。');
         });
 
     // 2. 範囲選択フォームの送信処理
@@ -73,20 +80,28 @@ if (document.getElementById('quiz-container')) {
         const start = parseInt(document.getElementById('start').value);
         const end = parseInt(document.getElementById('end').value);
         
+        if (allWords.length === 0) {
+            alert('データを読み込み中です。少々お待ちください。');
+            return;
+        }
+
         if (start < 1 || end > allWords.length || start > end) {
             alert(`範囲設定が不正です。(1から${allWords.length}まで)`);
             return;
         }
 
         // 3. 問題の生成 (ブラウザ側で実行)
+        // start-1 から end までの配列の要素をスライス
         const selectedWords = allWords.slice(start - 1, end);
+        
         questions = selectedWords.map(word => {
-            const correctAnswer = word.meaning;
+            const correctAnswer = word.meaning; // 正答は "meaning"
+            // 誤答を生成するために全単語の意味を使用
             const options = generateOptions(allWords, correctAnswer, 3);
             
             return {
-                question: word.english,
-                options: shuffleArray([...options, correctAnswer]),
+                question: word.word, // 問題文は "word" (英単語)
+                options: shuffleArray([...options, correctAnswer]), // 選択肢
                 correctAnswer: correctAnswer
             };
         });
@@ -113,7 +128,7 @@ if (document.getElementById('quiz-container')) {
 
         const q = questions[currentQuestionIndex];
         document.getElementById('question-counter').textContent = `問題 ${currentQuestionIndex + 1} / ${questions.length}`;
-        document.getElementById('question').textContent = q.question;
+        document.getElementById('question').textContent = q.question; // ★英単語を表示
         const optionsDiv = document.getElementById('options');
         optionsDiv.innerHTML = '';
         document.getElementById('feedback-message').innerHTML = '';
@@ -130,7 +145,7 @@ if (document.getElementById('quiz-container')) {
         questionArea.classList.add('fade-in');
     }
 
-    // 5. 回答の判定
+    // 5. 回答の判定 (変更なし)
     function checkAnswer(selectedAnswer, correctAnswer, clickedButton) {
         const feedback = document.getElementById('feedback-message');
         
@@ -152,7 +167,7 @@ if (document.getElementById('quiz-container')) {
             });
         }
 
-        // 次の問題へ移行
+        // 2秒後に次の問題へ移行
         setTimeout(() => {
             questionArea.classList.replace('fade-in', 'fade-out');
             
@@ -163,7 +178,7 @@ if (document.getElementById('quiz-container')) {
         }, 2000);
     }
 
-    // 6. 結果の表示
+    // 6. 結果の表示 (変更なし)
     function showResults() {
         questionArea.style.display = 'none';
         resultArea.style.display = 'block';
