@@ -1,0 +1,6 @@
+# Node.js
+node_modules/
+
+# ログや一時ファイル
+npm-debug.log*
+.DS_Store
