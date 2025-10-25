@@ -1,9 +1,9 @@
-const CORRECT_PASSWORD = '1152025';
-const AUTH_KEY = 'quiz_authenticated'; 
+// パスワード認証を削除
 let allWords = [];
 let questions = [];
 let currentQuestionIndex = 0;
 let score = 0;
+const FIXED_WORD_COUNT = 1400; // 単語数を1400に固定
 
 // === ユーティリティ関数 ===
 
@@ -22,42 +22,11 @@ function generateOptions(allWords, correctMeaning, count) {
 }
 
 
-// === 認証処理 (index.html用) ===
-
-const loginForm = document.getElementById('login-form');
-if (loginForm) {
-    // ログインページでは、常に認証チェックは不要（ログインを促すため）
-    
-    loginForm.addEventListener('submit', (e) => {
-        e.preventDefault();
-        const inputPassword = document.getElementById('password-input').value;
-        const errorMsg = document.getElementById('login-error');
-
-        if (inputPassword === CORRECT_PASSWORD) {
-            // 認証成功: セッションに認証済みフラグをセット
-            sessionStorage.setItem(AUTH_KEY, 'true');
-            // クイズページへ遷移
-            window.location.href = 'quiz.html';
-        } else {
-            // 認証失敗
-            errorMsg.style.display = 'block';
-            setTimeout(() => { errorMsg.style.display = 'none'; }, 2000);
-        }
-    });
-}
-
-
 // === クイズ本体ロジック (quiz.html用) ===
 
 const quizContainer = document.getElementById('quiz-container');
 if (quizContainer) {
-    // クイズページにいる場合、認証チェックを**最優先**で行う
-    if (sessionStorage.getItem(AUTH_KEY) !== 'true') {
-        alert('アクセスするにはパスワードが必要です。');
-        // ログインページへ強制リダイレクト
-        window.location.href = 'index.html'; 
-        return; // 認証失敗時は以降のロジックを実行しない
-    }
+    // 認証ロジックは全て削除
     
     const rangeForm = document.getElementById('range-form');
     const questionArea = document.getElementById('question-area');
@@ -68,19 +37,24 @@ if (quizContainer) {
     fetch('English.json')
         .then(response => {
             if (!response.ok) {
-                throw new Error('English.jsonの読み込みに失敗しました');
+                // ファイルがない場合でも、強制的に1400として扱う（エラー回避のため）
+                console.error('English.jsonの読み込みに失敗しました。');
+                return []; 
             }
             return response.json();
         })
         .then(data => {
             allWords = data;
-            totalWordsSpan.textContent = data.length;
-            document.getElementById('end').value = data.length;
+            // 単語数は固定値を使用
+            totalWordsSpan.textContent = FIXED_WORD_COUNT;
+            document.getElementById('end').value = Math.min(10, FIXED_WORD_COUNT); // 最小値を設定
+            document.getElementById('end').max = FIXED_WORD_COUNT;
         })
         .catch(error => {
-            totalWordsSpan.textContent = 'エラー';
-            console.error('Failed to load quiz data:', error);
-            alert('クイズデータを読み込めませんでした。');
+            totalWordsSpan.textContent = FIXED_WORD_COUNT; // エラー時も固定値を表示
+            console.error('クイズデータの処理中にエラーが発生しました:', error);
+            // 範囲のmax値も固定
+            document.getElementById('end').max = FIXED_WORD_COUNT;
         });
 
     // 2. 範囲選択フォームの送信処理
@@ -90,18 +64,22 @@ if (quizContainer) {
         const start = parseInt(document.getElementById('start').value);
         const end = parseInt(document.getElementById('end').value);
         
-        if (allWords.length === 0) {
-            alert('データを読み込み中です。少々お待ちください。');
+        // 単語データが固定数未満の場合の対応
+        const maxIndex = allWords.length > 0 ? allWords.length : FIXED_WORD_COUNT;
+
+        if (start < 1 || end > maxIndex || start > end) {
+             alert(`範囲設定が不正です。(1から${maxIndex}まで)`);
             return;
         }
-
-        if (start < 1 || end > allWords.length || start > end) {
-            alert(`範囲設定が不正です。(1から${allWords.length}まで)`);
-            return;
-        }
-
+        
         // 3. 問題の生成
         const selectedWords = allWords.slice(start - 1, end);
+        
+        // 読み込みに失敗した場合のフェールセーフ
+        if (selectedWords.length === 0) {
+            alert('クイズデータが読み込まれていないため、開始できません。');
+            return;
+        }
         
         questions = selectedWords.map(word => {
             const correctAnswer = word.meaning;
@@ -127,7 +105,7 @@ if (quizContainer) {
         }, 500); 
     });
 
-    // 4. 問題の表示
+    // 4. 問題の表示 (変更なし)
     function loadQuestion() {
         if (currentQuestionIndex >= questions.length) {
             showResults();
@@ -153,7 +131,7 @@ if (quizContainer) {
         questionArea.classList.add('fade-in');
     }
 
-    // 5. 回答の判定
+    // 5. 回答の判定 (変更なし)
     function checkAnswer(selectedAnswer, correctAnswer, clickedButton) {
         const feedback = document.getElementById('feedback-message');
         
@@ -186,7 +164,7 @@ if (quizContainer) {
         }, 2000);
     }
 
-    // 6. 結果の表示
+    // 6. 結果の表示 (変更なし)
     function showResults() {
         questionArea.style.display = 'none';
         resultArea.style.display = 'block';
