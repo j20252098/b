@@ -7,11 +7,13 @@
 </head>
 <body>
     <div class="login-container">
-        <h1>クイズサイト ログイン</h1>
-        <form action="/login" method="POST">
-            <input type="password" name="password" placeholder="パスワードを入力" required>
+        <h1>英単語クイズ ログイン</h1>
+        <form id="login-form">
+            <input type="password" id="password-input" placeholder="パスワードを入力" required>
             <button type="submit">開く</button>
+            <p id="login-error" style="color: red; display: none;">パスワードが違います。</p>
         </form>
     </div>
+    <script src="quiz.js"></script>
 </body>
 </html>
