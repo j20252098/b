@@ -1,5 +1,5 @@
 const CORRECT_PASSWORD = '1152025';
-const AUTH_KEY = 'quiz_authenticated'; // 認証状態を保存するキー
+const AUTH_KEY = 'quiz_authenticated'; 
 let allWords = [];
 let questions = [];
 let currentQuestionIndex = 0;
@@ -7,7 +7,6 @@ let score = 0;
 
 // === ユーティリティ関数 ===
 
-// 配列をシャッフルする
 function shuffleArray(array) {
     for (let i = array.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
@@ -16,7 +15,6 @@ function shuffleArray(array) {
     return array;
 }
 
-// 誤答の選択肢を生成する
 function generateOptions(allWords, correctMeaning, count) {
     const meanings = allWords.map(w => w.meaning).filter(m => m !== correctMeaning);
     const shuffledMeanings = shuffleArray(meanings);
@@ -26,11 +24,11 @@ function generateOptions(allWords, correctMeaning, count) {
 
 // === 認証処理 (index.html用) ===
 
-if (document.getElementById('login-form')) {
-    // ログインページにいる場合、セッションをリセット
-    sessionStorage.removeItem(AUTH_KEY);
+const loginForm = document.getElementById('login-form');
+if (loginForm) {
+    // ログインページでは、常に認証チェックは不要（ログインを促すため）
     
-    document.getElementById('login-form').addEventListener('submit', (e) => {
+    loginForm.addEventListener('submit', (e) => {
         e.preventDefault();
         const inputPassword = document.getElementById('password-input').value;
         const errorMsg = document.getElementById('login-error');
@@ -51,12 +49,14 @@ if (document.getElementById('login-form')) {
 
 // === クイズ本体ロジック (quiz.html用) ===
 
-if (document.getElementById('quiz-container')) {
-    // ページロード時: 認証チェック
+const quizContainer = document.getElementById('quiz-container');
+if (quizContainer) {
+    // クイズページにいる場合、認証チェックを**最優先**で行う
     if (sessionStorage.getItem(AUTH_KEY) !== 'true') {
         alert('アクセスするにはパスワードが必要です。');
         // ログインページへ強制リダイレクト
         window.location.href = 'index.html'; 
+        return; // 認証失敗時は以降のロジックを実行しない
     }
     
     const rangeForm = document.getElementById('range-form');
@@ -80,7 +80,7 @@ if (document.getElementById('quiz-container')) {
         .catch(error => {
             totalWordsSpan.textContent = 'エラー';
             console.error('Failed to load quiz data:', error);
-            alert('クイズデータを読み込めませんでした。ファイルパスを確認してください。');
+            alert('クイズデータを読み込めませんでした。');
         });
 
     // 2. 範囲選択フォームの送信処理
@@ -108,7 +108,7 @@ if (document.getElementById('quiz-container')) {
             const options = generateOptions(allWords, correctAnswer, 3);
             
             return {
-                question: word.word, // 問題文は "word" (英単語)
+                question: word.word, 
                 options: shuffleArray([...options, correctAnswer]),
                 correctAnswer: correctAnswer
             };
