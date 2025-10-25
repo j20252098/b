@@ -28,11 +28,12 @@ h1 {
 /* フォームとボタン */
 input[type="password"], input[type="number"] {
     width: calc(100% - 22px);
-    padding: 10px;
-    margin-bottom: 15px;
-    border: 1px solid #ddd;
-    border-radius: 5px;
+    padding: 15px 10px; /* パディングを増やし、入力欄を大きくする */
+    margin-bottom: 20px; /* 間隔を広げる */
+    border: 2px solid #ccc; /* 枠線を少し強調 */
+    border-radius: 8px; /* 角を丸くする */
     box-sizing: border-box;
+    font-size: 1.1em; /* 文字サイズを大きくする */
 }
 
 button {
@@ -55,9 +56,54 @@ button:disabled {
     cursor: not-allowed;
 }
 
-/* --- 修正: 選択肢ボタンのデザイン --- */
+/* --- 問題範囲選択フォームのスタイリング --- */
+#range-form {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+#range-form p {
+    font-size: 1.1em;
+    margin-bottom: 20px;
+    color: #555;
+    align-self: flex-start;
+}
+
+#range-form label {
+    align-self: flex-start; /* ラベルを左寄せにする */
+    margin-top: 10px;
+    font-weight: bold;
+    color: #4a69bd;
+}
+
+.range-inputs {
+    display: flex;
+    gap: 20px;
+    width: 100%;
+    margin-bottom: 20px;
+}
+
+.range-inputs > div {
+    flex: 1;
+}
+
+.range-inputs input[type="number"] {
+    width: 100%;
+    margin-bottom: 0; 
+}
+
+#range-form button {
+    width: 100%;
+    padding: 15px;
+    font-size: 1.2em;
+    border-radius: 8px;
+}
+/* --- 問題範囲選択フォームのスタイリング終了 --- */
+
+
+/* --- 選択肢ボタンのデザイン --- */
 .options-grid {
-    /* 選択肢を縦並びにする */
     display: flex;
     flex-direction: column; 
     gap: 12px; 
@@ -65,16 +111,16 @@ button:disabled {
 }
 
 .option-button {
-    width: 100%; /* 横幅いっぱい */
-    padding: 18px 20px; /* 縦長にする */
+    width: 100%; 
+    padding: 18px 20px; 
     font-size: 1.1em;
     border: 2px solid #4a69bd;
     background-color: #fff;
     color: #4a69bd;
-    border-radius: 50px; /* 角を丸くする */
+    border-radius: 50px; 
     cursor: pointer;
     transition: background-color 0.3s ease, transform 0.1s, border-color 0.3s ease;
-    text-align: left; /* テキストを左寄せにする */
+    text-align: left; 
 }
 
 .option-button:hover:not(:disabled) {
@@ -111,7 +157,7 @@ button:disabled {
 
 /* 正解アニメーション */
 .correct-answer-animation {
-    background-color: #d9ead3 !important; /* 薄い緑 */
+    background-color: #d9ead3 !important; 
     border-color: #38761d !important;
     color: #38761d !important;
     animation: correct-pulse 0.5s 2;
@@ -125,7 +171,7 @@ button:disabled {
 
 /* 不正解アニメーション */
 .wrong-answer-animation {
-    background-color: #f4cccc !important; /* 薄い赤 */
+    background-color: #f4cccc !important; 
     border-color: #cc0000 !important;
     color: #cc0000 !important;
 }
@@ -157,7 +203,6 @@ button:disabled {
         font-size: 1.8em;
     }
 
-    /* 問題文とカウンターのサイズ調整 */
     #question {
         font-size: 1.5em;
         margin-top: 15px;
@@ -168,11 +213,22 @@ button:disabled {
         margin-bottom: 5px;
     }
 
-    /* 選択肢ボタンのフォントサイズ調整 */
+    .range-inputs {
+        flex-direction: column; /* スマホでは縦並びに戻す */
+        gap: 0;
+    }
+    
+    .range-inputs input[type="number"] {
+        margin-bottom: 15px;
+    }
+
+    #range-form label {
+        margin-top: 5px;
+    }
+
     .option-button {
         padding: 14px 15px;
         font-size: 1em;
-        /* テキストを中央寄せに戻す（スマホでの見やすさ優先） */
         text-align: center;
     }
 }
@@ -183,7 +239,6 @@ button:disabled {
         padding: 40px;
     }
     
-    /* 選択肢ボタンの横幅を少し狭める */
     .options-grid {
         max-width: 80%;
         margin: 25px auto 0;
