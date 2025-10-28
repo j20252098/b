@@ -2,7 +2,7 @@ let allWords = [];
 let questions = [];
 let currentQuestionIndex = 0;
 let score = 0;
-let currentMode = "en"; // "en" = 英語→日本語, "jp" = 日本語→英語
+let currentMode = "en";
 const FIXED_WORD_COUNT = 1400;
 
 // 音声
@@ -36,6 +36,7 @@ const backToMenu = document.getElementById('back-to-menu');
 const showListBtn = document.getElementById('show-list-btn');
 const toggleEnBtn = document.getElementById('toggle-en');
 const toggleJpBtn = document.getElementById('toggle-jp');
+const searchInput = document.getElementById('search-input'); // ← 追加
 
 // === JSON読み込み ===
 fetch('English.json')
@@ -44,6 +45,7 @@ fetch('English.json')
         allWords = data;
         totalWordsSpan.textContent = FIXED_WORD_COUNT;
         document.getElementById('end').max = FIXED_WORD_COUNT;
+        showListBtn.disabled = false;
     })
     .catch(() => totalWordsSpan.textContent = FIXED_WORD_COUNT);
 
@@ -109,11 +111,11 @@ function checkAnswer(selected, correct, btn) {
         score++;
         feedback.innerHTML = "✅ 正解！";
         btn.classList.add("correct-answer-animation");
-        soundCorrect.play();
+        if (soundCorrect) soundCorrect.play();
     } else {
         feedback.innerHTML = `❌ 不正解。正解は「${correct}」`;
         btn.classList.add("wrong-answer-animation");
-        soundWrong.play();
+        if (soundWrong) soundWrong.play();
     }
 
     scoreDisplay.textContent = `スコア: ${score} / ${questions.length}`;
@@ -136,7 +138,7 @@ function showResults() {
 showListBtn.onclick = () => {
     rangeForm.style.display = "none";
     wordListArea.style.display = "block";
-    renderWordList();
+    renderWordList(allWords);
 };
 
 backToMenu.onclick = () => {
@@ -145,13 +147,16 @@ backToMenu.onclick = () => {
 };
 
 // === 一覧生成 ===
-function renderWordList() {
+function renderWordList(list) {
     wordListDiv.innerHTML = "";
-    allWords.forEach(w => {
+    list.forEach(w => {
         const row = document.createElement("div");
         row.className = "word-row";
-        row.innerHTML = `<span class="word-en">${w.word}</span>
-                         <span class="word-jp">${w.meaning}</span>`;
+        row.innerHTML = `
+            <span class="word-id">${w.id}</span>
+            <span class="word-en">${w.word}</span>
+            <span class="word-jp">${w.meaning}</span>
+        `;
         wordListDiv.appendChild(row);
     });
 }
@@ -168,3 +173,14 @@ toggleJpBtn.onclick = () => {
     document.querySelectorAll(".word-jp").forEach(el => el.classList.toggle("hidden", isHidden));
     toggleJpBtn.textContent = isHidden ? "日本語を表示" : "日本語を隠す";
 };
+
+// === 検索機能 ===
+searchInput.addEventListener("input", (e) => {
+    const query = e.target.value.trim().toLowerCase();
+    const filtered = allWords.filter(w =>
+        w.word.toLowerCase().includes(query) ||
+        w.meaning.toLowerCase().includes(query) ||
+        w.id.toString().includes(query)
+    );
+    renderWordList(filtered);
+});
