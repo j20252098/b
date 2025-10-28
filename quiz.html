@@ -51,15 +51,21 @@
         <button onclick="window.location.reload()">もう一度プレイ</button>
     </div>
 
-    <div id="word-list-area" style="display:none;">
-        <h2>単語一覧</h2>
-        <div class="list-controls">
-            <button id="toggle-en">英語を隠す</button>
-            <button id="toggle-jp">日本語を隠す</button>
-        </div>
-        <div id="word-list" class="word-list"></div>
-        <button id="back-to-menu">戻る</button>
+<div id="word-list-area" style="display:none;">
+  <h2>単語一覧</h2>
+
+  <div class="list-controls">
+    <input type="text" id="search-input" placeholder="番号・英単語・意味で検索">
+    <div class="toggle-buttons">
+      <button id="toggle-en">英語を隠す</button>
+      <button id="toggle-jp">日本語を隠す</button>
     </div>
+  </div>
+
+  <div id="word-list"></div>
+
+  <button id="back-to-menu">メニューに戻る</button>
+</div>
 </div>
 
 <!-- 音声ファイル -->
