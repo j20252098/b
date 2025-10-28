@@ -206,7 +206,7 @@ function applyMasks() {
       mask.style.left = "0";
       mask.style.width = "100%";
       mask.style.height = "100%";
-      mask.style.backgroundColor = "rgba(180, 180, 180, 0.8)";
+　　　mask.style.backgroundColor = "rgba(0, 0, 0, 1)";
       mask.style.borderRadius = "4px";
       mask.style.cursor = "pointer";
 
