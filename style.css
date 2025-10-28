@@ -260,3 +260,20 @@ button:disabled {
         margin: 25px auto 0;
     }
 }
+#word-list {
+    width: 100%;
+    max-width: 800px;
+    margin: 0 auto;
+    text-align: left;
+}
+
+.word-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 15px;
+    border-bottom: 1px solid #eee;
+}
+
+.word-item:nth-child(even) {
+    background-color: #f9f9f9;
+}
