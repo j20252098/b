@@ -5,7 +5,7 @@ let totalQuestions = 0;
 let mode = "en"; // 英語→日本語モード
 
 // -------------------- データ読み込み --------------------
-fetch("words.json")
+fetch("English.json")
   .then(res => res.json())
   .then(data => {
     words = data;
