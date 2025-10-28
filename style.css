@@ -298,3 +298,13 @@ button:disabled {
 .toggle-buttons button {
   margin-left: 5px;
 }
+.word-item {
+  display: flex;
+  gap: 8px;
+  position: relative;
+  padding: 4px;
+}
+
+.word-mask {
+  transition: opacity 0.3s;
+}
