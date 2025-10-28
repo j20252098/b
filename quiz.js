@@ -12,7 +12,7 @@ fetch("English.json")
     document.getElementById("total-words").textContent = data.length;
   })
   .catch(() => {
-    alert("words.json の読み込みに失敗しました。");
+    alert("English.json の読み込みに失敗しました。");
   });
 
 // -------------------- 問題範囲フォーム --------------------
