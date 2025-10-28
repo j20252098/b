@@ -277,3 +277,24 @@ button:disabled {
 .word-item:nth-child(even) {
     background-color: #f9f9f9;
 }
+.word-num {
+  width: 40px;
+  color: #666;
+  font-weight: bold;
+}
+
+.word-en, .word-jp {
+  flex: 1;
+  padding: 0 8px;
+}
+
+.list-controls {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.toggle-buttons button {
+  margin-left: 5px;
+}
