@@ -1,12 +1,15 @@
-// パスワード認証を削除
 let allWords = [];
 let questions = [];
 let currentQuestionIndex = 0;
 let score = 0;
-const FIXED_WORD_COUNT = 1400; // 単語数を1400に固定
+let currentMode = "en"; // "en" = 英語→日本語, "jp" = 日本語→英語
+const FIXED_WORD_COUNT = 1400;
 
-// === ユーティリティ関数 ===
+// 音声
+const soundCorrect = document.getElementById("sound-correct");
+const soundWrong = document.getElementById("sound-wrong");
 
+// === ユーティリティ ===
 function shuffleArray(array) {
     for (let i = array.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
@@ -15,162 +18,153 @@ function shuffleArray(array) {
     return array;
 }
 
-function generateOptions(allWords, correctMeaning, count) {
-    const meanings = allWords.map(w => w.meaning).filter(m => m !== correctMeaning);
-    const shuffledMeanings = shuffleArray(meanings);
-    return shuffledMeanings.slice(0, count);
+function generateOptions(allWords, correct, count, mode) {
+    const pool = mode === "en" ? allWords.map(w => w.meaning) : allWords.map(w => w.word);
+    const filtered = pool.filter(m => m !== correct);
+    return shuffleArray(filtered).slice(0, count);
 }
 
+// === DOM要素 ===
+const rangeForm = document.getElementById('range-form');
+const questionArea = document.getElementById('question-area');
+const resultArea = document.getElementById('result-area');
+const totalWordsSpan = document.getElementById('total-words');
+const scoreDisplay = document.getElementById('score-display');
+const wordListArea = document.getElementById('word-list-area');
+const wordListDiv = document.getElementById('word-list');
+const backToMenu = document.getElementById('back-to-menu');
+const showListBtn = document.getElementById('show-list-btn');
+const toggleEnBtn = document.getElementById('toggle-en');
+const toggleJpBtn = document.getElementById('toggle-jp');
 
-// === クイズ本体ロジック (quiz.html用) ===
+// === JSON読み込み ===
+fetch('English.json')
+    .then(res => res.json())
+    .then(data => {
+        allWords = data;
+        totalWordsSpan.textContent = FIXED_WORD_COUNT;
+        document.getElementById('end').max = FIXED_WORD_COUNT;
+    })
+    .catch(() => totalWordsSpan.textContent = FIXED_WORD_COUNT);
 
-const quizContainer = document.getElementById('quiz-container');
-if (quizContainer) {
-    // 認証ロジックは全て削除
-    
-    const rangeForm = document.getElementById('range-form');
-    const questionArea = document.getElementById('question-area');
-    const resultArea = document.getElementById('result-area');
-    const totalWordsSpan = document.getElementById('total-words');
+// === 範囲選択フォーム送信 ===
+rangeForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const start = parseInt(document.getElementById('start').value);
+    const end = parseInt(document.getElementById('end').value);
+    currentMode = document.getElementById('mode').value;
 
-    // 1. JSONデータの読み込み
-    fetch('English.json')
-        .then(response => {
-            if (!response.ok) {
-                // ファイルがない場合でも、強制的に1400として扱う（エラー回避のため）
-                console.error('English.jsonの読み込みに失敗しました。');
-                return []; 
-            }
-            return response.json();
-        })
-        .then(data => {
-            allWords = data;
-            // 単語数は固定値を使用
-            totalWordsSpan.textContent = FIXED_WORD_COUNT;
-            document.getElementById('end').value = Math.min(10, FIXED_WORD_COUNT); // 最小値を設定
-            document.getElementById('end').max = FIXED_WORD_COUNT;
-        })
-        .catch(error => {
-            totalWordsSpan.textContent = FIXED_WORD_COUNT; // エラー時も固定値を表示
-            console.error('クイズデータの処理中にエラーが発生しました:', error);
-            // 範囲のmax値も固定
-            document.getElementById('end').max = FIXED_WORD_COUNT;
-        });
+    if (start < 1 || end > FIXED_WORD_COUNT || start > end) {
+        alert(`範囲設定が不正です。(1〜${FIXED_WORD_COUNT})`);
+        return;
+    }
 
-    // 2. 範囲選択フォームの送信処理
-    rangeForm.addEventListener('submit', (e) => {
-        e.preventDefault();
-        
-        const start = parseInt(document.getElementById('start').value);
-        const end = parseInt(document.getElementById('end').value);
-        
-        // 単語データが固定数未満の場合の対応
-        const maxIndex = allWords.length > 0 ? allWords.length : FIXED_WORD_COUNT;
+    const selected = allWords.slice(start - 1, end);
+    if (selected.length === 0) return alert("データがありません");
 
-        if (start < 1 || end > maxIndex || start > end) {
-             alert(`範囲設定が不正です。(1から${maxIndex}まで)`);
-            return;
-        }
-        
-        // 3. 問題の生成
-        const selectedWords = allWords.slice(start - 1, end);
-        
-        // 読み込みに失敗した場合のフェールセーフ
-        if (selectedWords.length === 0) {
-            alert('クイズデータが読み込まれていないため、開始できません。');
-            return;
-        }
-        
-        questions = selectedWords.map(word => {
-            const correctAnswer = word.meaning;
-            const options = generateOptions(allWords, correctAnswer, 3);
-            
-            return {
-                question: word.word, 
-                options: shuffleArray([...options, correctAnswer]),
-                correctAnswer: correctAnswer
-            };
-        });
-
-        currentQuestionIndex = 0;
-        score = 0;
-
-        // 画面切り替えアニメーション
-        rangeForm.classList.replace('fade-in', 'fade-out');
-        setTimeout(() => {
-            rangeForm.style.display = 'none';
-            questionArea.style.display = 'block';
-            questionArea.classList.add('fade-in');
-            loadQuestion();
-        }, 500); 
+    questions = selected.map(word => {
+        const question = currentMode === "en" ? word.word : word.meaning;
+        const correct = currentMode === "en" ? word.meaning : word.word;
+        const options = generateOptions(allWords, correct, 3, currentMode);
+        return { question, correctAnswer: correct, options: shuffleArray([...options, correct]) };
     });
 
-    // 4. 問題の表示 (変更なし)
-    function loadQuestion() {
-        if (currentQuestionIndex >= questions.length) {
-            showResults();
-            return;
-        }
+    currentQuestionIndex = 0;
+    score = 0;
+    rangeForm.style.display = "none";
+    questionArea.style.display = "block";
+    loadQuestion();
+});
 
-        const q = questions[currentQuestionIndex];
-        document.getElementById('question-counter').textContent = `問題 ${currentQuestionIndex + 1} / ${questions.length}`;
-        document.getElementById('question').textContent = q.question;
-        const optionsDiv = document.getElementById('options');
-        optionsDiv.innerHTML = '';
-        document.getElementById('feedback-message').innerHTML = '';
-        
-        q.options.forEach(option => {
-            const button = document.createElement('button');
-            button.textContent = option;
-            button.classList.add('option-button');
-            button.addEventListener('click', () => checkAnswer(option, q.correctAnswer, button));
-            optionsDiv.appendChild(button);
-        });
-        
-        questionArea.classList.remove('fade-out');
-        questionArea.classList.add('fade-in');
-    }
+// === 問題をロード ===
+function loadQuestion() {
+    if (currentQuestionIndex >= questions.length) return showResults();
 
-    // 5. 回答の判定 (変更なし)
-    function checkAnswer(selectedAnswer, correctAnswer, clickedButton) {
-        const feedback = document.getElementById('feedback-message');
-        
-        document.querySelectorAll('#options button').forEach(btn => btn.disabled = true);
+    const q = questions[currentQuestionIndex];
+    document.getElementById('question-counter').textContent =
+        `問題 ${currentQuestionIndex + 1} / ${questions.length}`;
+    document.getElementById('question').textContent = q.question;
+    scoreDisplay.textContent = `スコア: ${score} / ${questions.length}`;
 
-        if (selectedAnswer === correctAnswer) {
-            score++;
-            feedback.innerHTML = '✅ **正解です！**';
-            clickedButton.classList.add('correct-answer-animation');
-            
-        } else {
-            feedback.innerHTML = `❌ **不正解。** 正解は「<span class="correct-text">${correctAnswer}</span>」でした。`;
-            clickedButton.classList.add('wrong-answer-animation');
-            
-            document.querySelectorAll('#options button').forEach(btn => {
-                if (btn.textContent === correctAnswer) {
-                    btn.classList.add('highlight-correct');
-                }
-            });
-        }
+    const optionsDiv = document.getElementById('options');
+    const feedback = document.getElementById('feedback-message');
+    optionsDiv.innerHTML = "";
+    feedback.innerHTML = "";
 
-        // 2秒後に次の問題へ移行
-        setTimeout(() => {
-            questionArea.classList.replace('fade-in', 'fade-out');
-            
-            setTimeout(() => {
-                currentQuestionIndex++;
-                loadQuestion();
-            }, 500);
-        }, 2000);
-    }
-
-    // 6. 結果の表示 (変更なし)
-    function showResults() {
-        questionArea.style.display = 'none';
-        resultArea.style.display = 'block';
-        resultArea.classList.add('fade-in');
-        
-        document.getElementById('score').textContent = score;
-        document.getElementById('total-questions').textContent = questions.length;
-    }
+    q.options.forEach(option => {
+        const btn = document.createElement("button");
+        btn.textContent = option;
+        btn.classList.add("option-button");
+        btn.onclick = () => checkAnswer(option, q.correctAnswer, btn);
+        optionsDiv.appendChild(btn);
+    });
 }
+
+// === 回答判定 ===
+function checkAnswer(selected, correct, btn) {
+    const feedback = document.getElementById('feedback-message');
+    document.querySelectorAll('#options button').forEach(b => b.disabled = true);
+
+    if (selected === correct) {
+        score++;
+        feedback.innerHTML = "✅ 正解！";
+        btn.classList.add("correct-answer-animation");
+        soundCorrect.play();
+    } else {
+        feedback.innerHTML = `❌ 不正解。正解は「${correct}」`;
+        btn.classList.add("wrong-answer-animation");
+        soundWrong.play();
+    }
+
+    scoreDisplay.textContent = `スコア: ${score} / ${questions.length}`;
+
+    setTimeout(() => {
+        currentQuestionIndex++;
+        loadQuestion();
+    }, 1500);
+}
+
+// === 結果表示 ===
+function showResults() {
+    questionArea.style.display = "none";
+    resultArea.style.display = "block";
+    document.getElementById("score").textContent = score;
+    document.getElementById("total-questions").textContent = questions.length;
+}
+
+// === 単語一覧表示 ===
+showListBtn.onclick = () => {
+    rangeForm.style.display = "none";
+    wordListArea.style.display = "block";
+    renderWordList();
+};
+
+backToMenu.onclick = () => {
+    wordListArea.style.display = "none";
+    rangeForm.style.display = "block";
+};
+
+// === 一覧生成 ===
+function renderWordList() {
+    wordListDiv.innerHTML = "";
+    allWords.forEach(w => {
+        const row = document.createElement("div");
+        row.className = "word-row";
+        row.innerHTML = `<span class="word-en">${w.word}</span>
+                         <span class="word-jp">${w.meaning}</span>`;
+        wordListDiv.appendChild(row);
+    });
+}
+
+// === 表示切替 ===
+toggleEnBtn.onclick = () => {
+    const isHidden = toggleEnBtn.classList.toggle("active");
+    document.querySelectorAll(".word-en").forEach(el => el.classList.toggle("hidden", isHidden));
+    toggleEnBtn.textContent = isHidden ? "英語を表示" : "英語を隠す";
+};
+
+toggleJpBtn.onclick = () => {
+    const isHidden = toggleJpBtn.classList.toggle("active");
+    document.querySelectorAll(".word-jp").forEach(el => el.classList.toggle("hidden", isHidden));
+    toggleJpBtn.textContent = isHidden ? "日本語を表示" : "日本語を隠す";
+};
