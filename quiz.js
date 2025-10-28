@@ -1,189 +1,186 @@
-let allWords = [];
-let questions = [];
-let currentQuestionIndex = 0;
+let words = [];
+let currentIndex = 0;
 let score = 0;
-let currentMode = "en"; // "en" = 英語→日本語, "jp" = 日本語→英語
-const FIXED_WORD_COUNT = 1400;
+let totalQuestions = 0;
+let mode = "en"; // 英語→日本語モード
 
-// 音声
-const soundCorrect = document.getElementById("sound-correct");
-const soundWrong = document.getElementById("sound-wrong");
-
-// === ユーティリティ ===
-function shuffleArray(array) {
-  for (let i = array.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [array[i], array[j]] = [array[j], array[i]];
-  }
-  return array;
-}
-
-function generateOptions(allWords, correct, count, mode) {
-  const pool = mode === "en" ? allWords.map(w => w.meaning) : allWords.map(w => w.word);
-  const filtered = pool.filter(m => m !== correct);
-  return shuffleArray(filtered).slice(0, count);
-}
-
-// === DOM要素 ===
-const rangeForm = document.getElementById('range-form');
-const questionArea = document.getElementById('question-area');
-const resultArea = document.getElementById('result-area');
-const totalWordsSpan = document.getElementById('total-words');
-const scoreDisplay = document.getElementById('score-display');
-const wordListArea = document.getElementById('word-list-area');
-const wordListDiv = document.getElementById('word-list');
-const backToMenu = document.getElementById('back-to-menu');
-const showListBtn = document.getElementById('show-list-btn');
-const toggleEnBtn = document.getElementById('toggle-en');
-const toggleJpBtn = document.getElementById('toggle-jp');
-const searchInput = document.getElementById('search-input');
-
-// === JSON読み込み ===
-fetch('English.json')
+// -------------------- データ読み込み --------------------
+fetch("words.json")
   .then(res => res.json())
   .then(data => {
-    allWords = data;
-    totalWordsSpan.textContent = FIXED_WORD_COUNT;
-    document.getElementById('end').max = FIXED_WORD_COUNT;
+    words = data;
+    document.getElementById("total-words").textContent = data.length;
   })
-  .catch(() => totalWordsSpan.textContent = FIXED_WORD_COUNT);
+  .catch(() => {
+    alert("words.json の読み込みに失敗しました。");
+  });
 
-// === 範囲選択フォーム送信 ===
-rangeForm.addEventListener('submit', (e) => {
+// -------------------- 問題範囲フォーム --------------------
+const rangeForm = document.getElementById("range-form");
+const quizContainer = document.getElementById("quiz-container");
+const questionArea = document.getElementById("question-area");
+const resultArea = document.getElementById("result-area");
+const wordListArea = document.getElementById("word-list-area");
+
+rangeForm.addEventListener("submit", (e) => {
   e.preventDefault();
-  const start = parseInt(document.getElementById('start').value);
-  const end = parseInt(document.getElementById('end').value);
-  currentMode = document.getElementById('mode').value;
+  const start = parseInt(document.getElementById("start").value);
+  const end = parseInt(document.getElementById("end").value);
+  mode = document.getElementById("mode").value;
 
-  if (start < 1 || end > FIXED_WORD_COUNT || start > end) {
-    alert(`範囲設定が不正です。(1〜${FIXED_WORD_COUNT})`);
+  if (isNaN(start) || isNaN(end) || start < 1 || end > words.length || start > end) {
+    alert("正しい範囲を入力してください。");
     return;
   }
 
-  const selected = allWords.slice(start - 1, end);
-  if (selected.length === 0) return alert("データがありません");
-
-  questions = selected.map(word => {
-    const question = currentMode === "en" ? word.word : word.meaning;
-    const correct = currentMode === "en" ? word.meaning : word.word;
-    const options = generateOptions(allWords, correct, 3, currentMode);
-    return { question, correctAnswer: correct, options: shuffleArray([...options, correct]) };
-  });
-
-  currentQuestionIndex = 0;
-  score = 0;
-  rangeForm.style.display = "none";
-  questionArea.style.display = "block";
-  loadQuestion();
+  startQuiz(start, end);
 });
 
-// === 問題をロード ===
-function loadQuestion() {
-  if (currentQuestionIndex >= questions.length) return showResults();
+// -------------------- クイズ開始 --------------------
+function startQuiz(start, end) {
+  rangeForm.style.display = "none";
+  questionArea.style.display = "block";
 
-  const q = questions[currentQuestionIndex];
-  document.getElementById('question-counter').textContent =
-    `問題 ${currentQuestionIndex + 1} / ${questions.length}`;
-  document.getElementById('question').textContent = q.question;
-  scoreDisplay.textContent = `スコア: ${score} / ${questions.length}`;
+  const quizWords = words.slice(start - 1, end);
+  totalQuestions = quizWords.length;
+  currentIndex = 0;
+  score = 0;
 
-  const optionsDiv = document.getElementById('options');
-  const feedback = document.getElementById('feedback-message');
-  optionsDiv.innerHTML = "";
-  feedback.innerHTML = "";
+  showQuestion(quizWords);
+}
 
-  q.options.forEach(option => {
+// -------------------- 問題を表示 --------------------
+function showQuestion(quizWords) {
+  const q = quizWords[currentIndex];
+  const questionCounter = document.getElementById("question-counter");
+  const question = document.getElementById("question");
+  const optionsContainer = document.getElementById("options");
+  const feedback = document.getElementById("feedback-message");
+  const scoreDisplay = document.getElementById("score-display");
+
+  feedback.textContent = "";
+  optionsContainer.innerHTML = "";
+
+  questionCounter.textContent = `問題 ${currentIndex + 1} / ${totalQuestions}`;
+  scoreDisplay.textContent = `スコア: ${score} / ${currentIndex}`;
+
+  const correctAnswer = mode === "en" ? q.meaning : q.word;
+  question.textContent = mode === "en" ? q.word : q.meaning;
+
+  // ランダム選択肢
+  const options = generateOptions(correctAnswer);
+  options.forEach(opt => {
     const btn = document.createElement("button");
-    btn.textContent = option;
     btn.classList.add("option-button");
-    btn.onclick = () => checkAnswer(option, q.correctAnswer, btn);
-    optionsDiv.appendChild(btn);
+    btn.textContent = opt;
+    btn.onclick = () => handleAnswer(opt === correctAnswer, quizWords);
+    optionsContainer.appendChild(btn);
   });
 }
 
-// === 回答判定 ===
-function checkAnswer(selected, correct, btn) {
-  const feedback = document.getElementById('feedback-message');
-  document.querySelectorAll('#options button').forEach(b => b.disabled = true);
+function generateOptions(correct) {
+  const options = [correct];
+  while (options.length < 4) {
+    const random = words[Math.floor(Math.random() * words.length)];
+    const value = mode === "en" ? random.meaning : random.word;
+    if (!options.includes(value)) options.push(value);
+  }
+  return options.sort(() => Math.random() - 0.5);
+}
 
-  if (selected === correct) {
+// -------------------- 回答処理 --------------------
+function handleAnswer(isCorrect, quizWords) {
+  const feedback = document.getElementById("feedback-message");
+  const soundCorrect = document.getElementById("sound-correct");
+  const soundWrong = document.getElementById("sound-wrong");
+  const scoreDisplay = document.getElementById("score-display");
+
+  if (isCorrect) {
+    feedback.textContent = "正解！";
+    feedback.className = "feedback correct-text";
     score++;
-    feedback.innerHTML = "✅ 正解！";
-    btn.classList.add("correct-answer-animation");
     soundCorrect.play();
   } else {
-    feedback.innerHTML = `❌ 不正解。正解は「${correct}」`;
-    btn.classList.add("wrong-answer-animation");
+    feedback.textContent = "不正解...";
+    feedback.className = "feedback wrong-text";
     soundWrong.play();
   }
 
-  scoreDisplay.textContent = `スコア: ${score} / ${questions.length}`;
+  scoreDisplay.textContent = `スコア: ${score} / ${currentIndex + 1}`;
 
   setTimeout(() => {
-    currentQuestionIndex++;
-    loadQuestion();
-  }, 1500);
+    currentIndex++;
+    if (currentIndex < quizWords.length) {
+      showQuestion(quizWords);
+    } else {
+      showResult();
+    }
+  }, 800);
 }
 
-// === 結果表示 ===
-function showResults() {
-  questionArea.style.display = "none";
-  resultArea.style.display = "block";
+// -------------------- 結果表示 --------------------
+function showResult() {
+  document.getElementById("question-area").style.display = "none";
+  document.getElementById("result-area").style.display = "block";
   document.getElementById("score").textContent = score;
-  document.getElementById("total-questions").textContent = questions.length;
+  document.getElementById("total-questions").textContent = totalQuestions;
 }
 
-// === 単語一覧表示 ===
-showListBtn.onclick = () => {
+// -------------------- 単語一覧表示 --------------------
+document.getElementById("show-list-btn").addEventListener("click", () => {
   rangeForm.style.display = "none";
   wordListArea.style.display = "block";
-  renderWordList();
-};
+  renderWordList(words);
+});
 
-backToMenu.onclick = () => {
+document.getElementById("back-to-menu").addEventListener("click", () => {
   wordListArea.style.display = "none";
-  rangeForm.style.display = "block";
-};
+  rangeForm.style.display = "flex";
+});
 
-// === 一覧生成 ===
-function renderWordList(filter = "") {
-  wordListDiv.innerHTML = "";
+// -------------------- 一覧描画 --------------------
+function renderWordList(list) {
+  const container = document.getElementById("word-list");
+  container.innerHTML = "";
 
-  const filtered = allWords.filter(w => {
-    const query = filter.toLowerCase();
-    return (
-      w.id.toString().includes(query) ||
-      w.word.toLowerCase().includes(query) ||
-      w.meaning.toLowerCase().includes(query)
-    );
-  });
-
-  filtered.forEach(w => {
-    const row = document.createElement("div");
-    row.className = "word-item";
-    row.innerHTML = `
-      <span class="word-num">#${w.id}</span>
-      <span class="word-en">${w.word}</span>
-      <span class="word-jp">${w.meaning}</span>
+  list.forEach(item => {
+    const div = document.createElement("div");
+    div.className = "word-item";
+    div.innerHTML = `
+      <span class="word-id">${item.id}.</span>
+      <span class="word-en">${item.word}</span>
+      <span class="word-jp">${item.meaning}</span>
     `;
-    wordListDiv.appendChild(row);
+    container.appendChild(div);
   });
 }
 
-// === 検索機能 ===
-searchInput.addEventListener("input", (e) => {
-  renderWordList(e.target.value);
+// -------------------- 検索機能 --------------------
+document.getElementById("search-input").addEventListener("input", (e) => {
+  const keyword = e.target.value.toLowerCase();
+  const filtered = words.filter(item =>
+    item.id.toString().includes(keyword) ||
+    item.word.toLowerCase().includes(keyword) ||
+    item.meaning.toLowerCase().includes(keyword)
+  );
+  renderWordList(filtered);
 });
 
-// === 表示切替 ===
-toggleEnBtn.onclick = () => {
-  const isHidden = toggleEnBtn.classList.toggle("active");
-  document.querySelectorAll(".word-en").forEach(el => el.classList.toggle("hidden", isHidden));
-  toggleEnBtn.textContent = isHidden ? "英語を表示" : "英語を隠す";
-};
+// -------------------- 表示切り替え（日本語・英語） --------------------
+const toggleEnBtn = document.getElementById("toggle-en");
+const toggleJpBtn = document.getElementById("toggle-jp");
 
-toggleJpBtn.onclick = () => {
-  const isHidden = toggleJpBtn.classList.toggle("active");
-  document.querySelectorAll(".word-jp").forEach(el => el.classList.toggle("hidden", isHidden));
-  toggleJpBtn.textContent = isHidden ? "日本語を表示" : "日本語を隠す";
-};
+let enHidden = false;
+let jpHidden = false;
+
+toggleEnBtn.addEventListener("click", () => {
+  enHidden = !enHidden;
+  document.querySelectorAll(".word-en").forEach(el => el.style.display = enHidden ? "none" : "inline");
+  toggleEnBtn.textContent = enHidden ? "英語を表示" : "英語を隠す";
+});
+
+toggleJpBtn.addEventListener("click", () => {
+  jpHidden = !jpHidden;
+  document.querySelectorAll(".word-jp").forEach(el => el.style.display = jpHidden ? "none" : "inline");
+  toggleJpBtn.textContent = jpHidden ? "日本語を表示" : "日本語を隠す";
+});
