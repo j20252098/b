@@ -153,6 +153,8 @@ function renderWordList(list) {
     `;
     container.appendChild(div);
   });
+
+  applyMasks();
 }
 
 // -------------------- 検索機能 --------------------
@@ -175,12 +177,41 @@ let jpHidden = false;
 
 toggleEnBtn.addEventListener("click", () => {
   enHidden = !enHidden;
-  document.querySelectorAll(".word-en").forEach(el => el.style.display = enHidden ? "none" : "inline");
+  applyMasks();
   toggleEnBtn.textContent = enHidden ? "英語を表示" : "英語を隠す";
 });
 
 toggleJpBtn.addEventListener("click", () => {
   jpHidden = !jpHidden;
-  document.querySelectorAll(".word-jp").forEach(el => el.style.display = jpHidden ? "none" : "inline");
+  applyMasks();
   toggleJpBtn.textContent = jpHidden ? "日本語を表示" : "日本語を隠す";
 });
+
+// -------------------- マスク適用 --------------------
+function applyMasks() {
+  document.querySelectorAll(".word-en, .word-jp").forEach(el => {
+    el.style.position = "relative";
+
+    // 既存マスク削除
+    const oldMask = el.querySelector(".word-mask");
+    if (oldMask) oldMask.remove();
+
+    const shouldMask = (el.classList.contains("word-en") && enHidden) ||
+                       (el.classList.contains("word-jp") && jpHidden);
+    if (shouldMask) {
+      const mask = document.createElement("div");
+      mask.className = "word-mask";
+      mask.style.position = "absolute";
+      mask.style.top = "0";
+      mask.style.left = "0";
+      mask.style.width = "100%";
+      mask.style.height = "100%";
+      mask.style.backgroundColor = "rgba(180, 180, 180, 0.8)";
+      mask.style.borderRadius = "4px";
+      mask.style.cursor = "pointer";
+
+      mask.addEventListener("click", () => mask.remove());
+      el.appendChild(mask);
+    }
+  });
+}
